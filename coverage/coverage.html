@@ -1,0 +1,1575 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>config: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">registry/internal/config/config.go (0.0%)</option>
+				
+				<option value="file1">registry/internal/handlers/handlers.go (93.2%)</option>
+				
+				<option value="file2">registry/internal/models/server.go (100.0%)</option>
+				
+				<option value="file3">registry/internal/server/server.go (0.0%)</option>
+				
+				<option value="file4">registry/internal/storage/memory.go (89.4%)</option>
+				
+				<option value="file5">registry/internal/storage/mock.go (0.0%)</option>
+				
+				<option value="file6">registry/internal/storage/sqlite.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package config
+
+import (
+        "flag"
+        "fmt"
+        "log"
+        "os"
+        "strconv"
+)
+
+// Config holds all configuration for the application
+type Config struct {
+        // Server configuration
+        Port    string `json:"port"`
+        Host    string `json:"host"`
+        Address string `json:"address"` // Computed from Host:Port
+
+        // Application configuration
+        Environment string `json:"environment"` // dev, staging, production
+        LogLevel    string `json:"log_level"`   // debug, info, warn, error
+        Version     string `json:"version"`
+
+        // Storage configuration
+        StorageType string `json:"storage_type"` // memory, file, database
+        DataPath    string `json:"data_path"`    // For file storage
+
+        // Feature flags
+        EnableMetrics bool `json:"enable_metrics"`
+        EnableCORS    bool `json:"enable_cors"`
+
+        // Database configuration
+        DatabaseURL     string `json:"database_url"`      // Connection string
+        DatabaseDriver  string `json:"database_driver"`   // sqlite3, postgres, mysql
+        DatabaseName    string `json:"database_name"`     // Database name
+        MaxOpenConns    int    `json:"max_open_conns"`    // Connection pool size
+        MaxIdleConns    int    `json:"max_idle_conns"`    // Idle connections
+        ConnMaxLifetime int    `json:"conn_max_lifetime"` // Connection lifetime (minutes
+}
+
+// Load reads configuration from environment variables, command line flags, and defaults
+func Load() (*Config, error) <span class="cov0" title="0">{
+        cfg := &amp;Config{}
+
+        // Define command line flags
+        var (
+                port           = flag.String("port", "", "Server port (default: 8080)")
+                host           = flag.String("host", "", "Server host (default: localhost)")
+                environment    = flag.String("env", "", "Environment: dev, staging, production (default: dev)")
+                logLevel       = flag.String("log-level", "", "Log level: debug, info, warn, error (default: info)")
+                storageType    = flag.String("storage", "", "Storage type: memory, sqlite, database (default: memory)")
+                version        = flag.Bool("version", false, "Show version and exit")
+                help           = flag.Bool("help", false, "Show help and exit")
+                databaseURL    = flag.String("db-url", "", "Database URL (default: ./data/registry.db)")
+                databaseDriver = flag.String("db-driver", "", "Database driver: sqlite3, postgres (default: sqlite3)")
+        )
+
+        flag.Parse()
+
+        // Show help if requested
+        if *help </span><span class="cov0" title="0">{
+                fmt.Println("MCP Registry Server")
+                fmt.Println("Configuration options:")
+                flag.PrintDefaults()
+                fmt.Println("\nEnvironment variables:")
+                fmt.Println("  MCP_PORT          Server port")
+                fmt.Println("  MCP_HOST          Server host")
+                fmt.Println("  MCP_ENVIRONMENT   Environment (dev/staging/production)")
+                fmt.Println("  MCP_LOG_LEVEL     Log level (debug/info/warn/error)")
+                fmt.Println("  MCP_STORAGE_TYPE  Storage type (memory/sqlite/database)")
+                os.Exit(0)
+        }</span>
+
+        // Show version if requested
+        <span class="cov0" title="0">if *version </span><span class="cov0" title="0">{
+                fmt.Printf("MCP Registry v%s\n", getEnvOr("MCP_VERSION", "dev"))
+                os.Exit(0)
+        }</span>
+
+        // Load configuration with precedence: flags &gt; env vars &gt; defaults
+        <span class="cov0" title="0">cfg.Port = getConfigValue(*port, "MCP_PORT", "8080")
+        cfg.Host = getConfigValue(*host, "MCP_HOST", "localhost")
+        cfg.Environment = getConfigValue(*environment, "MCP_ENVIRONMENT", "dev")
+        cfg.LogLevel = getConfigValue(*logLevel, "MCP_LOG_LEVEL", "info")
+        cfg.StorageType = getConfigValue(*storageType, "MCP_STORAGE_TYPE", "sqlite")
+        cfg.Version = getEnvOr("MCP_VERSION", "dev")
+        cfg.DataPath = getEnvOr("MCP_DATA_PATH", "./data")
+        cfg.DatabaseURL = getConfigValue(*databaseURL, "MCP_DATABASE_URL", "./data/registry.db")
+        cfg.DatabaseDriver = getConfigValue(*databaseDriver, "MCP_DATABASE_DRIVER", "sqlite3")
+        cfg.DatabaseName = getEnvOr("MCP_DATABASE_NAME", "mcp_registry")
+        cfg.MaxOpenConns = getEnvInt("MCP_MAX_OPEN_CONNS", 25)
+        cfg.MaxIdleConns = getEnvInt("MCP_MAX_IDLE_CONNS", 25)
+        cfg.ConnMaxLifetime = getEnvInt("MCP_CONN_MAX_LIFETIME", 5)
+
+        // Feature flags
+        cfg.EnableMetrics = getEnvBool("MCP_ENABLE_METRICS", false)
+        cfg.EnableCORS = getEnvBool("MCP_ENABLE_CORS", true)
+
+        // Compute derived values
+        cfg.Address = cfg.Host + ":" + cfg.Port
+
+        // Validate configuration
+        if err := cfg.Validate(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid configuration: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return cfg, nil</span>
+}
+
+// Validate checks if the configuration is valid
+func (c *Config) Validate() error <span class="cov0" title="0">{
+        // Validate environment
+        switch c.Environment </span>{
+        case "dev", "development", "staging", "prod", "production":<span class="cov0" title="0"></span>
+                // Valid environments
+        default:<span class="cov0" title="0">
+                return fmt.Errorf("invalid environment: %s (must be dev/staging/production)", c.Environment)</span>
+        }
+
+        // Validate log level
+        <span class="cov0" title="0">switch c.LogLevel </span>{
+        case "debug", "info", "warn", "error":<span class="cov0" title="0"></span>
+                // Valid log levels
+        default:<span class="cov0" title="0">
+                return fmt.Errorf("invalid log level: %s (must be debug/info/warn/error)", c.LogLevel)</span>
+        }
+
+        // Validate storage type
+        <span class="cov0" title="0">switch c.StorageType </span>{
+        case "memory", "file", "sqlite", "database":<span class="cov0" title="0"></span>
+                // Valid storage types (database will be added later)
+        default:<span class="cov0" title="0">
+                return fmt.Errorf("invalid storage type: %s (must be memory/file)", c.StorageType)</span>
+        }
+
+        // Validate port is numeric
+        <span class="cov0" title="0">if _, err := strconv.Atoi(c.Port); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid port: %s (must be numeric)", c.Port)
+        }</span>
+
+        // Validate database driver
+        <span class="cov0" title="0">switch c.DatabaseDriver </span>{
+        case "sqlite3", "postgres", "mysql":<span class="cov0" title="0"></span>
+                // Valid drivers
+        default:<span class="cov0" title="0">
+                return fmt.Errorf("invalid database driver: %s (must be sqlite3/postgres/mysql)", c.DatabaseDriver)</span>
+        }
+
+        // Validate connection pool settings
+        <span class="cov0" title="0">if c.MaxOpenConns &lt;= 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("max_open_conns must be positive, got: %d", c.MaxOpenConns)
+        }</span>
+
+        <span class="cov0" title="0">if c.MaxIdleConns &lt;= 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("max_idle_conns must be positive, got: %d", c.MaxIdleConns)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// IsDevelopment returns true if running in development mode
+func (c *Config) IsDevelopment() bool <span class="cov0" title="0">{
+        return c.Environment == "dev" || c.Environment == "development"
+}</span>
+
+// IsProduction returns true if running in production mode
+func (c *Config) IsProduction() bool <span class="cov0" title="0">{
+        return c.Environment == "prod" || c.Environment == "production"
+}</span>
+
+// LogConfig prints the current configuration (excluding sensitive data)
+func (c *Config) LogConfig() <span class="cov0" title="0">{
+        log.Printf("Configuration loaded:")
+        log.Printf("  Environment: %s", c.Environment)
+        log.Printf("  Address: %s", c.Address)
+        log.Printf("  Log Level: %s", c.LogLevel)
+        log.Printf("  Storage Type: %s", c.StorageType)
+        log.Printf("  Enable CORS: %v", c.EnableCORS)
+        log.Printf("  Enable Metrics: %v", c.EnableMetrics)
+}</span>
+
+// getConfigValue returns the first non-empty value from flag, env var, or default
+func getConfigValue(flagValue, envKey, defaultValue string) string <span class="cov0" title="0">{
+        if flagValue != "" </span><span class="cov0" title="0">{
+                return flagValue
+        }</span>
+        <span class="cov0" title="0">if envValue := os.Getenv(envKey); envValue != "" </span><span class="cov0" title="0">{
+                return envValue
+        }</span>
+        <span class="cov0" title="0">return defaultValue</span>
+}
+
+// getEnvOr returns environment variable value or default
+func getEnvOr(key, defaultValue string) string <span class="cov0" title="0">{
+        if value := os.Getenv(key); value != "" </span><span class="cov0" title="0">{
+                return value
+        }</span>
+        <span class="cov0" title="0">return defaultValue</span>
+}
+
+// getEnvBool returns environment variable as boolean or default
+func getEnvBool(key string, defaultValue bool) bool <span class="cov0" title="0">{
+        if value := os.Getenv(key); value != "" </span><span class="cov0" title="0">{
+                switch value </span>{
+                case "true", "1", "yes", "on":<span class="cov0" title="0">
+                        return true</span>
+                case "false", "0", "no", "off":<span class="cov0" title="0">
+                        return false</span>
+                }
+        }
+        <span class="cov0" title="0">return defaultValue</span>
+}
+
+// Add helper function for integer environment variables:
+func getEnvInt(key string, defaultValue int) int <span class="cov0" title="0">{
+        if value := os.Getenv(key); value != "" </span><span class="cov0" title="0">{
+                if intValue, err := strconv.Atoi(value); err == nil </span><span class="cov0" title="0">{
+                        return intValue
+                }</span>
+        }
+        <span class="cov0" title="0">return defaultValue</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Package handlers provides HTTP request handlers for the MCP registry API
+package handlers
+
+import (
+        "encoding/json"
+        "net/http"
+        "strings"
+
+        "registry/internal/models"
+)
+
+// Handler contains the dependencies needed for handling HTTP requests
+type Handler struct {
+        store models.ServerStore // Interface, not concrete type!
+}
+
+// NewHandler creates a new handler instance with the given store
+func NewHandler(store models.ServerStore) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{
+                store: store,
+        }
+}</span>
+
+// HealthHandler handles GET /health requests
+func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := map[string]string{
+                "status": "ok",
+        }
+
+        h.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// ServersHandler handles GET /servers and POST /servers requests
+func (h *Handler) ServersHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                h.handleGetServers(w, r)</span>
+        case http.MethodPost:<span class="cov8" title="1">
+                h.handleCreateServer(w, r)</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)</span>
+        }
+}
+
+// handleGetServers handles GET /servers requests
+func (h *Handler) handleGetServers(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        servers, err := h.store.GetAll()
+        if err != nil </span><span class="cov8" title="1">{
+                h.writeError(w, err, "Failed to retrieve servers", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := map[string]interface{}{
+                "servers": servers,
+                "count":   len(servers),
+        }
+
+        h.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// handleCreateServer handles POST /servers requests
+func (h *Handler) handleCreateServer(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var server models.Server
+        if err := json.NewDecoder(r.Body).Decode(&amp;server); err != nil </span><span class="cov8" title="1">{
+                h.writeError(w, err, "Invalid JSON", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if err := h.store.Create(server); err != nil </span><span class="cov8" title="1">{
+                // Check error type to determine response
+                switch err.(type) </span>{
+                case models.ValidationErrors:<span class="cov8" title="1">
+                        h.writeError(w, err, "Validation failed", http.StatusBadRequest)</span>
+                default:<span class="cov8" title="1">
+                        if strings.Contains(err.Error(), "already exists") </span><span class="cov8" title="1">{
+                                h.writeError(w, err, "Server already exists", http.StatusConflict)
+                        }</span> else<span class="cov0" title="0"> {
+                                h.writeError(w, err, "Failed to create server", http.StatusInternalServerError)
+                        }</span>
+                }
+                <span class="cov8" title="1">return</span>
+        }
+
+        <span class="cov8" title="1">h.writeJSON(w, server, http.StatusCreated)</span>
+}
+
+// ServerDetailHandler handles GET /servers/{id} requests
+func (h *Handler) ServerDetailHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        // Extract ID from URL path
+        <span class="cov8" title="1">id := h.extractIDFromPath(r.URL.Path, "/servers/")
+        if id == "" </span><span class="cov8" title="1">{
+                http.Error(w, "Server ID is required", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">server, err := h.store.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if strings.Contains(err.Error(), "not found") </span><span class="cov8" title="1">{
+                        h.writeError(w, err, "Server not found", http.StatusNotFound)
+                }</span> else<span class="cov0" title="0"> {
+                        h.writeError(w, err, "Failed to retrieve server", http.StatusInternalServerError)
+                }</span>
+                <span class="cov8" title="1">return</span>
+        }
+
+        <span class="cov8" title="1">h.writeJSON(w, server, http.StatusOK)</span>
+}
+
+// CountHandler handles GET /servers/count requests
+func (h *Handler) CountHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov8" title="1">total, active, err := h.store.Count()
+        if err != nil </span><span class="cov8" title="1">{
+                h.writeError(w, err, "Failed to get server count", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := map[string]int{
+                "total":  total,
+                "active": active,
+        }
+
+        h.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// SearchHandler handles GET /servers/search?name=xyz requests
+func (h *Handler) SearchHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }</span>
+
+        <span class="cov8" title="1">nameQuery := r.URL.Query().Get("name")
+        if nameQuery == "" </span><span class="cov8" title="1">{
+                http.Error(w, "Search term 'name' is required", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">servers, err := h.store.Search(nameQuery)
+        if err != nil </span><span class="cov8" title="1">{
+                h.writeError(w, err, "Failed to search servers", http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := map[string]interface{}{
+                "servers":     servers,
+                "count":       len(servers),
+                "search_term": nameQuery,
+        }
+
+        h.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// Helper methods
+
+// extractIDFromPath extracts the ID from a URL path
+func (h *Handler) extractIDFromPath(path, prefix string) string <span class="cov8" title="1">{
+        if !strings.HasPrefix(path, prefix) </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+        <span class="cov8" title="1">return strings.TrimPrefix(path, prefix)</span>
+}
+
+// writeJSON writes a JSON response with the given status code
+func (h *Handler) writeJSON(w http.ResponseWriter, data interface{}, statusCode int) <span class="cov8" title="1">{
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(statusCode)
+
+        if err := json.NewEncoder(w).Encode(data); err != nil </span><span class="cov0" title="0">{
+                // If we can't encode the response, write a simple error
+                http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+        }</span>
+}
+
+// writeError writes an error response in JSON format
+func (h *Handler) writeError(w http.ResponseWriter, err error, message string, statusCode int) <span class="cov8" title="1">{
+        response := map[string]string{
+                "error":   message,
+                "details": err.Error(),
+        }
+        h.writeJSON(w, response, statusCode)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package models
+
+type Server struct {
+        ID          string   `json:"id"`
+        Name        string   `json:"name"`
+        Description string   `json:"description"`
+        Version     string   `json:"version"`
+        Repository  string   `json:"repository"`
+        Author      string   `json:"author"`
+        Tags        []string `json:"tags"`
+        IsActive    bool     `json:"is_active"`
+        CreatedAt   string   `json:"created_at"`
+}
+
+// ServerStore defines the interface for server storage operations
+// This is a contract that any storage implementation must fulfill
+type ServerStore interface {
+        // GetAll returns all servers in the registry
+        GetAll() ([]Server, error)
+
+        // GetByID returns a specific server by its ID
+        GetByID(id string) (*Server, error)
+
+        // Create adds a new server to the registry
+        Create(server Server) error
+
+        // Update modifies an existing server
+        Update(server Server) error
+
+        // Delete removes a server from the registry
+        Delete(id string) error
+
+        // Search finds servers by name (case-insensitive)
+        Search(nameQuery string) ([]Server, error)
+
+        // Count returns the total number of servers and active servers
+        Count() (total int, active int, err error)
+}
+
+// ValidationError represents a validation error with details
+type ValidationError struct {
+        Field   string `json:"field"`
+        Message string `json:"message"`
+}
+
+func (e *ValidationError) Error() string <span class="cov8" title="1">{
+        return e.Field + ": " + e.Message
+}</span>
+
+type ValidationErrors []ValidationError
+
+func (ve ValidationErrors) Error() string <span class="cov8" title="1">{
+        if len(ve) == 0 </span><span class="cov8" title="1">{
+                return "no validation errors"
+        }</span>
+
+        <span class="cov8" title="1">result := "validation failed: "
+        for i, err := range ve </span><span class="cov8" title="1">{
+                if i &gt; 0 </span><span class="cov8" title="1">{
+                        result += ", "
+                }</span>
+                <span class="cov8" title="1">result += err.Error()</span>
+        }
+        <span class="cov8" title="1">return result</span>
+}
+
+// ValidateServer validates a server struct and returns any validation errors
+func ValidateServer(server Server) error <span class="cov8" title="1">{
+        var errors ValidationErrors
+
+        if server.ID == "" </span><span class="cov8" title="1">{
+                errors = append(errors, ValidationError{
+                        Field:   "id",
+                        Message: "is required",
+                })
+        }</span>
+
+        <span class="cov8" title="1">if server.Name == "" </span><span class="cov8" title="1">{
+                errors = append(errors, ValidationError{
+                        Field:   "name",
+                        Message: "is required",
+                })
+        }</span>
+
+        <span class="cov8" title="1">if server.Version == "" </span><span class="cov8" title="1">{
+                errors = append(errors, ValidationError{
+                        Field:   "version",
+                        Message: "is required",
+                })
+        }</span>
+
+        <span class="cov8" title="1">if len(errors) &gt; 0 </span><span class="cov8" title="1">{
+                return errors
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package server
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+        "os"
+        "os/signal"
+        "registry/internal/config"
+        "registry/internal/handlers"
+        "registry/internal/models"
+        "syscall"
+        "time"
+)
+
+// Server wraps the HTTP server with lifecycle management
+type Server struct {
+        config     *config.Config
+        httpServer *http.Server
+        store      models.ServerStore
+        handler    *handlers.Handler
+}
+
+// New creates a new server instance
+func New(cfg *config.Config, store models.ServerStore) *Server <span class="cov0" title="0">{
+        // Create handler
+        handler := handlers.NewHandler(store)
+
+        // Create HTTP server
+        httpServer := &amp;http.Server{
+                Addr:           cfg.Address,
+                Handler:        setupRoutes(handler, cfg),
+                ReadTimeout:    10 * time.Second,
+                WriteTimeout:   10 * time.Second,
+                IdleTimeout:    15 * time.Second,
+                MaxHeaderBytes: 1 &lt;&lt; 20, // 1 MB
+        }
+
+        return &amp;Server{
+                config:     cfg,
+                httpServer: httpServer,
+                store:      store,
+                handler:    handler,
+        }
+}</span>
+
+// setupRoutes configures all HTTP routes
+func setupRoutes(handler *handlers.Handler, cfg *config.Config) http.Handler <span class="cov0" title="0">{
+        mux := http.NewServeMux()
+
+        // API routes
+        mux.HandleFunc("/health", handler.HealthHandler)
+        mux.HandleFunc("/servers", handler.ServersHandler)
+        mux.HandleFunc("/servers/", handler.ServerDetailHandler)
+        mux.HandleFunc("/servers/count", handler.CountHandler)
+        mux.HandleFunc("/servers/search", handler.SearchHandler)
+
+        // Development routes (only in dev environment)
+        if cfg.IsDevelopment() </span><span class="cov0" title="0">{
+                mux.HandleFunc("/debug/config", debugConfigHandler(cfg))
+        }</span>
+
+        // Add middleware
+        <span class="cov0" title="0">var finalHandler http.Handler = mux
+
+        // CORS middleware (if enabled)
+        if cfg.EnableCORS </span><span class="cov0" title="0">{
+                finalHandler = corsMiddleware(finalHandler)
+        }</span>
+
+        // Logging middleware
+        <span class="cov0" title="0">finalHandler = loggingMiddleware(finalHandler, cfg)
+
+        return finalHandler</span>
+}
+
+// Start begins serving HTTP requests
+func (s *Server) Start() error <span class="cov0" title="0">{
+        log.Printf("🚀 Starting MCP Registry server")
+        log.Printf("📡 Server listening on http://%s", s.config.Address)
+        log.Printf("🌍 Environment: %s", s.config.Environment)
+
+        // Print available endpoints
+        s.printEndpoints()
+
+        // Start server in a goroutine
+        serverErrors := make(chan error, 1)
+        go func() </span><span class="cov0" title="0">{
+                serverErrors &lt;- s.httpServer.ListenAndServe()
+        }</span>()
+
+        // Setup signal handling for graceful shutdown
+        <span class="cov0" title="0">shutdown := make(chan os.Signal, 1)
+        signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+        // Block until we receive a signal or server error
+        select </span>{
+        case err := &lt;-serverErrors:<span class="cov0" title="0">
+                if err != nil &amp;&amp; err != http.ErrServerClosed </span><span class="cov0" title="0">{
+                        return fmt.Errorf("server failed to start: %w", err)
+                }</span>
+        case sig := &lt;-shutdown:<span class="cov0" title="0">
+                log.Printf("🛑 Received shutdown signal: %v", sig)
+
+                // Create context with timeout for graceful shutdown
+                ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+                defer cancel()
+
+                // Shutdown server gracefully
+                log.Println("🔄 Shutting down server gracefully...")
+                if err := s.httpServer.Shutdown(ctx); err != nil </span><span class="cov0" title="0">{
+                        log.Printf("❌ Server shutdown error: %v", err)
+                        return err
+                }</span>
+
+                <span class="cov0" title="0">log.Println("✅ Server shutdown complete")</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Stop shuts down the server gracefully
+func (s *Server) Stop(ctx context.Context) error <span class="cov0" title="0">{
+        log.Println("🔄 Stopping server...")
+        return s.httpServer.Shutdown(ctx)
+}</span>
+
+func (s *Server) printEndpoints() <span class="cov0" title="0">{
+        baseURL := fmt.Sprintf("http://%s", s.config.Address)
+
+        log.Println("📋 Available endpoints:")
+        log.Printf("   GET  %s/health", baseURL)
+        log.Printf("   GET  %s/servers", baseURL)
+        log.Printf("   POST %s/servers", baseURL)
+        log.Printf("   GET  %s/servers/{id}", baseURL)
+        log.Printf("   GET  %s/servers/count", baseURL)
+        log.Printf("   GET  %s/servers/search?name=xyz", baseURL)
+
+        if s.config.IsDevelopment() </span><span class="cov0" title="0">{
+                log.Printf("   GET  %s/debug/config (dev only)", baseURL)
+        }</span>
+
+        <span class="cov0" title="0">log.Println("💡 Try these commands:")
+        log.Printf("   curl %s/health", baseURL)
+        log.Printf("   curl %s/servers", baseURL)</span>
+}
+
+// Debug handlers
+
+// debugConfigHandler returns current configuration (development only)
+func debugConfigHandler(cfg *config.Config) http.HandlerFunc <span class="cov0" title="0">{
+        return func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                if r.Method != http.MethodGet </span><span class="cov0" title="0">{
+                        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json")
+
+                // Create safe config copy (remove sensitive data)
+                safeConfig := map[string]interface{}{
+                        "environment":    cfg.Environment,
+                        "address":        cfg.Address,
+                        "log_level":      cfg.LogLevel,
+                        "storage_type":   cfg.StorageType,
+                        "enable_cors":    cfg.EnableCORS,
+                        "enable_metrics": cfg.EnableMetrics,
+                        "version":        cfg.Version,
+                }
+
+                if err := json.NewEncoder(w).Encode(safeConfig); err != nil </span><span class="cov0" title="0">{
+                        http.Error(w, "Failed to encode config", http.StatusInternalServerError)
+                }</span>
+        }
+}
+
+// Middleware functions
+
+// loggingMiddleware logs HTTP requests
+func loggingMiddleware(next http.Handler, cfg *config.Config) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                start := time.Now()
+
+                // Create a response writer wrapper to capture status code
+                ww := &amp;responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+                // Call the next handler
+                next.ServeHTTP(ww, r)
+
+                // Log the request (structured logging)
+                duration := time.Since(start)
+
+                if cfg.LogLevel == "debug" </span><span class="cov0" title="0">{
+                        log.Printf("HTTP %s %s %d %v %s",
+                                r.Method, r.URL.Path, ww.statusCode, duration, r.RemoteAddr)
+                }</span> else<span class="cov0" title="0"> if ww.statusCode &gt;= 400 </span><span class="cov0" title="0">{
+                        // Always log errors
+                        log.Printf("HTTP ERROR %s %s %d %v",
+                                r.Method, r.URL.Path, ww.statusCode, duration)
+                }</span>
+        })
+}
+
+// corsMiddleware adds CORS headers
+func corsMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.Header().Set("Access-Control-Allow-Origin", "*")
+                w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+                w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+                // Handle preflight requests
+                if r.Method == http.MethodOptions </span><span class="cov0" title="0">{
+                        w.WriteHeader(http.StatusOK)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+        })
+}
+
+// responseWriter wraps http.ResponseWriter to capture status code
+type responseWriter struct {
+        http.ResponseWriter
+        statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) <span class="cov0" title="0">{
+        rw.statusCode = code
+        rw.ResponseWriter.WriteHeader(code)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package storage
+
+import (
+        "errors"
+        "strings"
+        "sync"
+        "time"
+
+        "registry/internal/models"
+)
+
+var (
+        ErrServerNotFound = errors.New("server not found")
+        ErrServerExists   = errors.New("server already exists")
+        ErrInvalidID      = errors.New("invalid server ID")
+)
+
+// MemoryStore implements the ServerStore interface using in-memory storage
+// This implementation is thread-safe using a read-write mutex
+type MemoryStore struct {
+        servers map[string]models.Server
+        mu      sync.RWMutex // Allows multiple readers OR one writer
+}
+
+// NewMemoryStore creates a new in-memory storage instance
+func NewMemoryStore() *MemoryStore <span class="cov8" title="1">{
+        return &amp;MemoryStore{
+                servers: make(map[string]models.Server),
+        }
+}</span>
+
+// GetAll returns all servers in the registry
+func (m *MemoryStore) GetAll() ([]models.Server, error) <span class="cov8" title="1">{
+        m.mu.RLock()         // Acquire read lock
+        defer m.mu.RUnlock() // Release when function returns
+
+        // Convert map to slice
+        servers := make([]models.Server, 0, len(m.servers))
+        for _, server := range m.servers </span><span class="cov8" title="1">{
+                servers = append(servers, server)
+        }</span>
+
+        <span class="cov8" title="1">return servers, nil</span>
+}
+
+// GetByID returns a specific server by its ID
+func (m *MemoryStore) GetByID(id string) (*models.Server, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, ErrInvalidID
+        }</span>
+
+        <span class="cov8" title="1">m.mu.RLock()
+        defer m.mu.RUnlock()
+
+        server, exists := m.servers[id]
+        if !exists </span><span class="cov8" title="1">{
+                return nil, ErrServerNotFound
+        }</span>
+
+        // Return a copy to prevent external modification
+        <span class="cov8" title="1">serverCopy := server
+        return &amp;serverCopy, nil</span>
+}
+
+// Create adds a new server to the registry
+func (m *MemoryStore) Create(server models.Server) error <span class="cov8" title="1">{
+        // Validate the server first
+        if err := models.ValidateServer(server); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">m.mu.Lock() // Acquire write lock (exclusive)
+        defer m.mu.Unlock()
+
+        // Check if server already exists
+        if _, exists := m.servers[server.ID]; exists </span><span class="cov8" title="1">{
+                return ErrServerExists
+        }</span>
+
+        // Set creation time if not provided
+        <span class="cov8" title="1">if server.CreatedAt == "" </span><span class="cov0" title="0">{
+                server.CreatedAt = time.Now().Format(time.RFC3339)
+        }</span>
+
+        // Store the server
+        <span class="cov8" title="1">m.servers[server.ID] = server
+        return nil</span>
+}
+
+// Update modifies an existing server
+func (m *MemoryStore) Update(server models.Server) error <span class="cov8" title="1">{
+        // Validate the server first
+        if err := models.ValidateServer(server); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">m.mu.Lock()
+        defer m.mu.Unlock()
+
+        // Check if server exists
+        if _, exists := m.servers[server.ID]; !exists </span><span class="cov8" title="1">{
+                return ErrServerNotFound
+        }</span>
+
+        // Update the server (preserve original creation time)
+        <span class="cov8" title="1">existing := m.servers[server.ID]
+        server.CreatedAt = existing.CreatedAt
+        m.servers[server.ID] = server
+
+        return nil</span>
+}
+
+// Delete removes a server from the registry
+func (m *MemoryStore) Delete(id string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return ErrInvalidID
+        }</span>
+
+        <span class="cov8" title="1">m.mu.Lock()
+        defer m.mu.Unlock()
+
+        // Check if server exists
+        if _, exists := m.servers[id]; !exists </span><span class="cov8" title="1">{
+                return ErrServerNotFound
+        }</span>
+
+        <span class="cov8" title="1">delete(m.servers, id)
+        return nil</span>
+}
+
+func (m *MemoryStore) Search(nameQuery string) ([]models.Server, error) <span class="cov8" title="1">{
+        if nameQuery == "" </span><span class="cov8" title="1">{
+                return []models.Server{}, nil
+        }</span>
+
+        <span class="cov8" title="1">m.mu.RLock()
+        defer m.mu.RUnlock()
+
+        var results []models.Server
+        queryLower := strings.ToLower(nameQuery)
+
+        for _, server := range m.servers </span><span class="cov8" title="1">{
+                if strings.Contains(strings.ToLower(server.Name), queryLower) </span><span class="cov8" title="1">{
+                        results = append(results, server)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return results, nil</span>
+}
+
+// Count returns the total number of servers and active servers
+func (m *MemoryStore) Count() (total int, active int, err error) <span class="cov8" title="1">{
+        m.mu.RLock()
+        defer m.mu.RUnlock()
+
+        total = len(m.servers)
+        for _, server := range m.servers </span><span class="cov8" title="1">{
+                if server.IsActive </span><span class="cov8" title="1">{
+                        active++
+                }</span>
+        }
+
+        <span class="cov8" title="1">return total, active, nil</span>
+}
+
+// InitWithSampleData populates the store with sample data for testing
+func (m *MemoryStore) InitWithSampleData() error <span class="cov0" title="0">{
+        sampleServers := []models.Server{
+                {
+                        ID:          "1",
+                        Name:        "filesystem-server",
+                        Description: "A server for accessing local filesystem",
+                        Version:     "1.0.0",
+                        Repository:  "https://github.com/example/filesystem-server",
+                        Author:      "Jane Doe",
+                        Tags:        []string{"filesystem", "local", "files"},
+                        IsActive:    true,
+                        CreatedAt:   time.Now().Format(time.RFC3339),
+                },
+                {
+                        ID:          "2",
+                        Name:        "web-scraper-server",
+                        Description: "A server for web scraping operations",
+                        Version:     "2.1.0",
+                        Repository:  "https://github.com/example/web-scraper",
+                        Author:      "John Smith",
+                        Tags:        []string{"web", "scraping", "http"},
+                        IsActive:    true,
+                        CreatedAt:   time.Now().Format(time.RFC3339),
+                },
+                {
+                        ID:          "3",
+                        Name:        "database-server",
+                        Description: "A server for database operations",
+                        Version:     "1.5.2",
+                        Repository:  "https://github.com/example/database-server",
+                        Author:      "Alice Johnson",
+                        Tags:        []string{"database", "sql", "storage"},
+                        IsActive:    false,
+                        CreatedAt:   time.Now().Format(time.RFC3339),
+                },
+        }
+
+        for _, server := range sampleServers </span><span class="cov0" title="0">{
+                if err := m.Create(server); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package storage
+
+import (
+        "registry/internal/models"
+
+        "github.com/stretchr/testify/mock"
+)
+
+// MockStore is a mock implementation of ServerStore for testing
+type MockStore struct {
+        mock.Mock
+}
+
+func NewMockStore() *MockStore <span class="cov0" title="0">{
+        return &amp;MockStore{}
+}</span>
+
+func (m *MockStore) GetAll() ([]models.Server, error) <span class="cov0" title="0">{
+        args := m.Called()
+        return args.Get(0).([]models.Server), args.Error(1)
+}</span>
+
+func (m *MockStore) GetByID(id string) (*models.Server, error) <span class="cov0" title="0">{
+        args := m.Called(id)
+        if args.Get(0) == nil </span><span class="cov0" title="0">{
+                return nil, args.Error(1)
+        }</span>
+        <span class="cov0" title="0">return args.Get(0).(*models.Server), args.Error(1)</span>
+}
+
+func (m *MockStore) Create(server models.Server) error <span class="cov0" title="0">{
+        args := m.Called(server)
+        return args.Error(0)
+}</span>
+
+func (m *MockStore) Update(server models.Server) error <span class="cov0" title="0">{
+        args := m.Called(server)
+        return args.Error(0)
+}</span>
+
+func (m *MockStore) Delete(id string) error <span class="cov0" title="0">{
+        args := m.Called(id)
+        return args.Error(0)
+}</span>
+
+func (m *MockStore) Search(nameQuery string) ([]models.Server, error) <span class="cov0" title="0">{
+        args := m.Called(nameQuery)
+        return args.Get(0).([]models.Server), args.Error(1)
+}</span>
+
+func (m *MockStore) Count() (total int, active int, err error) <span class="cov0" title="0">{
+        args := m.Called()
+        return args.Int(0), args.Int(1), args.Error(2)
+}</span>
+
+func (m *MockStore) Close() error <span class="cov0" title="0">{
+        args := m.Called()
+        return args.Error(0)
+}</span>
+
+// MatchedBy returns a mock argument matcher for flexible matching
+func (m *MockStore) MatchedBy(fn func(models.Server) bool) interface{} <span class="cov0" title="0">{
+        return mock.MatchedBy(fn)
+}</span>
+
+// Helper methods for setting up mock expectations
+
+func (m *MockStore) ExpectGetAll(servers []models.Server, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("GetAll").Return(servers, err)
+}</span>
+
+func (m *MockStore) ExpectGetByID(id string, server *models.Server, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("GetByID", id).Return(server, err)
+}</span>
+
+func (m *MockStore) ExpectCreate(server interface{}, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("Create", server).Return(err)
+}</span>
+
+func (m *MockStore) ExpectUpdate(server models.Server, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("Update", server).Return(err)
+}</span>
+
+func (m *MockStore) ExpectDelete(id string, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("Delete", id).Return(err)
+}</span>
+
+func (m *MockStore) ExpectSearch(query string, servers []models.Server, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("Search", query).Return(servers, err)
+}</span>
+
+func (m *MockStore) ExpectCount(total, active int, err error) *mock.Call <span class="cov0" title="0">{
+        return m.On("Count").Return(total, active, err)
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">// Package storage provides storage implementations for the MCP registry
+package storage
+
+import (
+        "database/sql"
+        "encoding/json"
+        "errors"
+        "fmt"
+        "os"
+        "path/filepath"
+        "strings"
+        "time"
+
+        "registry/internal/models"
+
+        _ "github.com/mattn/go-sqlite3" // SQLite driver
+)
+
+// SQLiteStore implements ServerStore using SQLite database
+type SQLiteStore struct {
+        db *sql.DB
+}
+
+// NewSQLiteStore creates a new SQLite storage instance
+func NewSQLiteStore(databaseURL string, maxOpenConns, maxIdleConns int, connMaxLifetime time.Duration) (*SQLiteStore, error) <span class="cov0" title="0">{
+        // Ensure data directory exists
+        if err := ensureDataDir(databaseURL); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create data directory: %w", err)
+        }</span>
+
+        // Open database connection
+        <span class="cov0" title="0">db, err := sql.Open("sqlite3", databaseURL+"?_foreign_keys=on&amp;_journal_mode=WAL")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open database: %w", err)
+        }</span>
+
+        // Configure connection pool
+        <span class="cov0" title="0">db.SetMaxOpenConns(maxOpenConns)
+        db.SetMaxIdleConns(maxIdleConns)
+        db.SetConnMaxLifetime(connMaxLifetime)
+
+        // Test connection
+        if err := db.Ping(); err != nil </span><span class="cov0" title="0">{
+                db.Close()
+                return nil, fmt.Errorf("failed to ping database: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">store := &amp;SQLiteStore{db: db}
+
+        // Run migrations
+        if err := store.runMigrations(); err != nil </span><span class="cov0" title="0">{
+                db.Close()
+                return nil, fmt.Errorf("failed to run migrations: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return store, nil</span>
+}
+
+// ensureDataDir creates the data directory if it doesn't exist
+func ensureDataDir(databaseURL string) error <span class="cov0" title="0">{
+        dir := filepath.Dir(databaseURL)
+        if dir == "." </span><span class="cov0" title="0">{
+                return nil // Current directory
+        }</span>
+        <span class="cov0" title="0">return os.MkdirAll(dir, 0755)</span>
+}
+
+// runMigrations applies database schema migrations
+func (s *SQLiteStore) runMigrations() error <span class="cov0" title="0">{
+        // Read migration file
+        migrationSQL, err := os.ReadFile("internal/storage/migrations.sql")
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to read migrations.sql: %w", err)
+        }</span>
+
+        // Execute migration
+        <span class="cov0" title="0">_, err = s.db.Exec(string(migrationSQL))
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to execute migrations: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetAll returns all servers from the database
+func (s *SQLiteStore) GetAll() ([]models.Server, error) <span class="cov0" title="0">{
+        query := `
+                SELECT id, name, description, version, repository, author, tags, is_active, created_at
+                FROM servers 
+                ORDER BY created_at DESC
+        `
+
+        rows, err := s.db.Query(query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to query servers: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var servers []models.Server
+        for rows.Next() </span><span class="cov0" title="0">{
+                server, err := s.scanServer(rows)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan server: %w", err)
+                }</span>
+                <span class="cov0" title="0">servers = append(servers, *server)</span>
+        }
+
+        <span class="cov0" title="0">if err := rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error iterating rows: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return servers, nil</span>
+}
+
+// GetByID returns a specific server by ID
+func (s *SQLiteStore) GetByID(id string) (*models.Server, error) <span class="cov0" title="0">{
+        if id == "" </span><span class="cov0" title="0">{
+                return nil, ErrInvalidID
+        }</span>
+
+        <span class="cov0" title="0">query := `
+                SELECT id, name, description, version, repository, author, tags, is_active, created_at
+                FROM servers 
+                WHERE id = ?
+        `
+
+        row := s.db.QueryRow(query, id)
+        server, err := s.scanServer(row)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, sql.ErrNoRows) </span><span class="cov0" title="0">{
+                        return nil, ErrServerNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("failed to get server by ID: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">return server, nil</span>
+}
+
+// Create adds a new server to the database
+func (s *SQLiteStore) Create(server models.Server) error <span class="cov0" title="0">{
+        // Validate server
+        if err := models.ValidateServer(server); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Check if server already exists
+        <span class="cov0" title="0">if _, err := s.GetByID(server.ID); err == nil </span><span class="cov0" title="0">{
+                return ErrServerExists
+        }</span> else<span class="cov0" title="0"> if !errors.Is(err, ErrServerNotFound) </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to check existing server: %w", err)
+        }</span>
+
+        // Convert tags to JSON
+        <span class="cov0" title="0">tagsJSON, err := json.Marshal(server.Tags)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal tags: %w", err)
+        }</span>
+
+        // Set creation time if not provided
+        <span class="cov0" title="0">if server.CreatedAt == "" </span><span class="cov0" title="0">{
+                server.CreatedAt = time.Now().Format(time.RFC3339)
+        }</span>
+
+        // Insert server
+        <span class="cov0" title="0">query := `
+                INSERT INTO servers (id, name, description, version, repository, author, tags, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+
+        _, err = s.db.Exec(query,
+                server.ID, server.Name, server.Description, server.Version,
+                server.Repository, server.Author, string(tagsJSON), server.IsActive, server.CreatedAt)
+        if err != nil </span><span class="cov0" title="0">{
+                if strings.Contains(err.Error(), "UNIQUE constraint failed") </span><span class="cov0" title="0">{
+                        return ErrServerExists
+                }</span>
+                <span class="cov0" title="0">return fmt.Errorf("failed to insert server: %w", err)</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Update modifies an existing server
+func (s *SQLiteStore) Update(server models.Server) error <span class="cov0" title="0">{
+        // Validate server
+        if err := models.ValidateServer(server); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Check if server exists
+        <span class="cov0" title="0">existing, err := s.GetByID(server.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Convert tags to JSON
+        <span class="cov0" title="0">tagsJSON, err := json.Marshal(server.Tags)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal tags: %w", err)
+        }</span>
+
+        // Preserve original creation time
+        <span class="cov0" title="0">server.CreatedAt = existing.CreatedAt
+
+        // Update server
+        query := `
+                UPDATE servers 
+                SET name = ?, description = ?, version = ?, repository = ?, author = ?, 
+                        tags = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+        `
+
+        result, err := s.db.Exec(query,
+                server.Name, server.Description, server.Version, server.Repository,
+                server.Author, string(tagsJSON), server.IsActive, server.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to update server: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">rowsAffected, err := result.RowsAffected()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get rows affected: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrServerNotFound
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Delete removes a server from the database
+func (s *SQLiteStore) Delete(id string) error <span class="cov0" title="0">{
+        if id == "" </span><span class="cov0" title="0">{
+                return ErrInvalidID
+        }</span>
+
+        <span class="cov0" title="0">query := `DELETE FROM servers WHERE id = ?`
+
+        result, err := s.db.Exec(query, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete server: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">rowsAffected, err := result.RowsAffected()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get rows affected: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrServerNotFound
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Search finds servers by name
+func (s *SQLiteStore) Search(nameQuery string) ([]models.Server, error) <span class="cov0" title="0">{
+        if nameQuery == "" </span><span class="cov0" title="0">{
+                return []models.Server{}, nil
+        }</span>
+
+        <span class="cov0" title="0">query := `
+                SELECT id, name, description, version, repository, author, tags, is_active, created_at
+                FROM servers 
+                WHERE name LIKE ? 
+                ORDER BY created_at DESC
+        `
+
+        // Use SQL LIKE with wildcards for case-insensitive search
+        searchPattern := "%" + strings.ToLower(nameQuery) + "%"
+
+        rows, err := s.db.Query(query, searchPattern)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to search servers: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var servers []models.Server
+        for rows.Next() </span><span class="cov0" title="0">{
+                server, err := s.scanServer(rows)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to scan server: %w", err)
+                }</span>
+                <span class="cov0" title="0">servers = append(servers, *server)</span>
+        }
+
+        <span class="cov0" title="0">return servers, nil</span>
+}
+
+// Count returns server statistics
+func (s *SQLiteStore) Count() (total int, active int, err error) <span class="cov0" title="0">{
+        query := `
+                SELECT 
+                        COUNT(*) as total,
+                        COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active
+                FROM servers
+        `
+
+        row := s.db.QueryRow(query)
+        err = row.Scan(&amp;total, &amp;active)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, 0, fmt.Errorf("failed to get server count: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return total, active, nil</span>
+}
+
+// Close closes the database connection
+func (s *SQLiteStore) Close() error <span class="cov0" title="0">{
+        if s.db != nil </span><span class="cov0" title="0">{
+                return s.db.Close()
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Helper methods
+
+// scanServer scans a database row into a Server struct
+func (s *SQLiteStore) scanServer(row interface{ Scan(...interface{}) error }) (*models.Server, error) <span class="cov0" title="0">{
+        var server models.Server
+        var tagsJSON string
+
+        err := row.Scan(
+                &amp;server.ID, &amp;server.Name, &amp;server.Description, &amp;server.Version,
+                &amp;server.Repository, &amp;server.Author, &amp;tagsJSON, &amp;server.IsActive, &amp;server.CreatedAt,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Parse tags JSON
+        <span class="cov0" title="0">if tagsJSON != "" </span><span class="cov0" title="0">{
+                if err := json.Unmarshal([]byte(tagsJSON), &amp;server.Tags); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return &amp;server, nil</span>
+}
+
+// InitWithSampleData populates the database with sample data
+func (s *SQLiteStore) InitWithSampleData() error <span class="cov0" title="0">{
+        // Check if we already have data
+        count, _, err := s.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to check existing data: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                // Data already exists, don't overwrite
+                return nil
+        }</span>
+
+        // Sample servers
+        <span class="cov0" title="0">sampleServers := []models.Server{
+                {
+                        ID:          "1",
+                        Name:        "filesystem-server",
+                        Description: "A server for accessing local filesystem",
+                        Version:     "1.0.0",
+                        Repository:  "https://github.com/example/filesystem-server",
+                        Author:      "Jane Doe",
+                        Tags:        []string{"filesystem", "local", "files"},
+                        IsActive:    true,
+                },
+                {
+                        ID:          "2",
+                        Name:        "web-scraper-server",
+                        Description: "A server for web scraping operations",
+                        Version:     "2.1.0",
+                        Repository:  "https://github.com/example/web-scraper",
+                        Author:      "John Smith",
+                        Tags:        []string{"web", "scraping", "http"},
+                        IsActive:    true,
+                },
+                {
+                        ID:          "3",
+                        Name:        "database-server",
+                        Description: "A server for database operations",
+                        Version:     "1.5.2",
+                        Repository:  "https://github.com/example/database-server",
+                        Author:      "Alice Johnson",
+                        Tags:        []string{"database", "sql", "storage"},
+                        IsActive:    false,
+                },
+        }
+
+        // Insert sample data
+        for _, server := range sampleServers </span><span class="cov0" title="0">{
+                if err := s.Create(server); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create sample server %s: %w", server.ID, err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
