@@ -98,6 +98,7 @@ func TestConfig_IsDevelopment(t *testing.T) {
 	}{
 		{"dev", "dev", true},
 		{"development", "development", true},
+		{"test", "test", true},
 		{"staging", "staging", false},
 		{"production", "production", false},
 		{"prod", "prod", false},
@@ -119,6 +120,7 @@ func TestConfig_IsProduction(t *testing.T) {
 	}{
 		{"dev", "dev", false},
 		{"development", "development", false},
+		{"test", "test", false},
 		{"staging", "staging", false},
 		{"production", "production", true},
 		{"prod", "prod", true},

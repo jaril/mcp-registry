@@ -45,7 +45,7 @@ func Load() (*Config, error) {
 	var (
 		port           = flag.String("port", "", "Server port (default: 8080)")
 		host           = flag.String("host", "", "Server host (default: localhost)")
-		environment    = flag.String("env", "", "Environment: dev, staging, production (default: dev)")
+		environment    = flag.String("env", "", "Environment: dev, test, staging, production (default: dev)")
 		logLevel       = flag.String("log-level", "", "Log level: debug, info, warn, error (default: info)")
 		storageType    = flag.String("storage", "", "Storage type: memory, sqlite, database (default: memory)")
 		version        = flag.Bool("version", false, "Show version and exit")
@@ -64,7 +64,7 @@ func Load() (*Config, error) {
 		fmt.Println("\nEnvironment variables:")
 		fmt.Println("  MCP_PORT          Server port")
 		fmt.Println("  MCP_HOST          Server host")
-		fmt.Println("  MCP_ENVIRONMENT   Environment (dev/staging/production)")
+		fmt.Println("  MCP_ENVIRONMENT   Environment (dev/test/staging/production)")
 		fmt.Println("  MCP_LOG_LEVEL     Log level (debug/info/warn/error)")
 		fmt.Println("  MCP_STORAGE_TYPE  Storage type (memory/sqlite/database)")
 		os.Exit(0)
@@ -110,10 +110,10 @@ func Load() (*Config, error) {
 func (c *Config) Validate() error {
 	// Validate environment
 	switch c.Environment {
-	case "dev", "development", "staging", "prod", "production":
+	case "dev", "development", "test", "staging", "prod", "production":
 		// Valid environments
 	default:
-		return fmt.Errorf("invalid environment: %s (must be dev/staging/production)", c.Environment)
+		return fmt.Errorf("invalid environment: %s (must be dev/test/staging/production)", c.Environment)
 	}
 
 	// Validate log level
@@ -159,7 +159,7 @@ func (c *Config) Validate() error {
 
 // IsDevelopment returns true if running in development mode
 func (c *Config) IsDevelopment() bool {
-	return c.Environment == "dev" || c.Environment == "development"
+	return c.Environment == "dev" || c.Environment == "development" || c.Environment == "test"
 }
 
 // IsProduction returns true if running in production mode
