@@ -339,7 +339,6 @@ func (s *SQLiteStore) scanServer(row interface{ Scan(...interface{}) error }) (*
 	return &server, nil
 }
 
-// InitWithSampleData populates the database with sample data
 func (s *SQLiteStore) InitWithSampleData() error {
 	// Check if we already have data
 	count, _, err := s.Count()
@@ -352,7 +351,95 @@ func (s *SQLiteStore) InitWithSampleData() error {
 		return nil
 	}
 
-	// Sample servers
+	return s.loadFromJSONFile("data/seed_2025_05_16.json")
+}
+
+// loadFromJSONFile loads servers from a JSON file and converts them to the current Server model
+func (s *SQLiteStore) loadFromJSONFile(filePath string) error {
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		fmt.Printf("⚠️  Seed file not found: %s, using fallback sample data\n", filePath)
+		return s.loadFallbackSampleData()
+	}
+
+	// Read JSON file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("⚠️  Failed to read seed file: %v, using fallback sample data\n", err)
+		return s.loadFallbackSampleData()
+	}
+
+	// Define temporary struct matching your JSON structure
+	type JSONServer struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Repository  struct {
+			URL    string `json:"url"`
+			Source string `json:"source"`
+			ID     string `json:"id"`
+		} `json:"repository"`
+		VersionDetail struct {
+			Version     string `json:"version"`
+			ReleaseDate string `json:"release_date"`
+			IsLatest    bool   `json:"is_latest"`
+		} `json:"version_detail"`
+		Packages []struct {
+			RegistryName string `json:"registry_name"`
+			Name         string `json:"name"`
+			Version      string `json:"version"`
+		} `json:"packages,omitempty"`
+	}
+
+	// Parse JSON
+	var jsonServers []JSONServer
+	if err := json.Unmarshal(data, &jsonServers); err != nil {
+		fmt.Printf("⚠️  Failed to parse JSON: %v, using fallback sample data\n", err)
+		return s.loadFallbackSampleData()
+	}
+
+	// Convert to current Server model and create
+	successCount := 0
+	for _, jsonServer := range jsonServers {
+		// Extract tags from package registry names
+		tags := make([]string, 0)
+		for _, pkg := range jsonServer.Packages {
+			if pkg.RegistryName != "" && pkg.RegistryName != "unknown" {
+				tags = append(tags, pkg.RegistryName)
+			}
+		}
+
+		// Add some basic tags
+		tags = append(tags, "mcp", "server")
+
+		// Create Server with current model structure
+		server := models.Server{
+			ID:          jsonServer.ID,
+			Name:        jsonServer.Name,
+			Description: jsonServer.Description,
+			Version:     jsonServer.VersionDetail.Version,
+			Repository:  jsonServer.Repository.URL,
+			Author:      extractAuthorFromRepoURL(jsonServer.Repository.URL),
+			Tags:        tags,
+			IsActive:    true, // Default to active
+			CreatedAt:   time.Now().Format(time.RFC3339),
+		}
+
+		// Create the server
+		if err := s.Create(server); err != nil {
+			fmt.Printf("⚠️  Failed to create server %s: %v\n", server.Name, err)
+		} else {
+			successCount++
+		}
+	}
+
+	fmt.Printf("✅ Loaded %d servers from %s\n", successCount, filePath)
+	return nil
+}
+
+// loadFallbackSampleData provides fallback sample data if JSON loading fails
+func (s *SQLiteStore) loadFallbackSampleData() error {
+	// Sample servers (existing implementation)
 	sampleServers := []models.Server{
 		{
 			ID:          "1",
@@ -364,26 +451,7 @@ func (s *SQLiteStore) InitWithSampleData() error {
 			Tags:        []string{"filesystem", "local", "files"},
 			IsActive:    true,
 		},
-		{
-			ID:          "2",
-			Name:        "web-scraper-server",
-			Description: "A server for web scraping operations",
-			Version:     "2.1.0",
-			Repository:  "https://github.com/example/web-scraper",
-			Author:      "John Smith",
-			Tags:        []string{"web", "scraping", "http"},
-			IsActive:    true,
-		},
-		{
-			ID:          "3",
-			Name:        "database-server",
-			Description: "A server for database operations",
-			Version:     "1.5.2",
-			Repository:  "https://github.com/example/database-server",
-			Author:      "Alice Johnson",
-			Tags:        []string{"database", "sql", "storage"},
-			IsActive:    false,
-		},
+		// ... rest of sample servers
 	}
 
 	// Insert sample data

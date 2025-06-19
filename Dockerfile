@@ -14,6 +14,7 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /build/registry .
 COPY --from=builder /app/internal/storage/migrations.sql ./internal/storage/
+COPY --from=builder /app/data/seed_2025_05_16.json ./internal/data/
 EXPOSE 8080
 
 ENTRYPOINT ["./registry"]

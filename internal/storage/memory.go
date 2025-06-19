@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -163,8 +166,108 @@ func (m *MemoryStore) Count() (total int, active int, err error) {
 	return total, active, nil
 }
 
-// InitWithSampleData populates the store with sample data for testing
+// InitWithSampleData loads servers from the seed JSON file
 func (m *MemoryStore) InitWithSampleData() error {
+	return m.loadFromJSONFile("data/seed_2025_05_16.json")
+}
+
+// loadFromJSONFile loads servers from a JSON file and converts them to the current Server model
+func (m *MemoryStore) loadFromJSONFile(filePath string) error {
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		fmt.Printf("⚠️  Seed file not found: %s, using fallback sample data\n", filePath)
+		return m.loadFallbackSampleData()
+	}
+
+	// Read JSON file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("⚠️  Failed to read seed file: %v, using fallback sample data\n", err)
+		return m.loadFallbackSampleData()
+	}
+
+	// Define temporary struct matching your JSON structure
+	type JSONServer struct {
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Repository  struct {
+			URL    string `json:"url"`
+			Source string `json:"source"`
+			ID     string `json:"id"`
+		} `json:"repository"`
+		VersionDetail struct {
+			Version     string `json:"version"`
+			ReleaseDate string `json:"release_date"`
+			IsLatest    bool   `json:"is_latest"`
+		} `json:"version_detail"`
+		Packages []struct {
+			RegistryName string `json:"registry_name"`
+			Name         string `json:"name"`
+			Version      string `json:"version"`
+		} `json:"packages,omitempty"`
+	}
+
+	// Parse JSON
+	var jsonServers []JSONServer
+	if err := json.Unmarshal(data, &jsonServers); err != nil {
+		fmt.Printf("⚠️  Failed to parse JSON: %v, using fallback sample data\n", err)
+		return m.loadFallbackSampleData()
+	}
+
+	// Convert to current Server model and create
+	successCount := 0
+	for _, jsonServer := range jsonServers {
+		// Extract tags from package registry names
+		tags := make([]string, 0)
+		for _, pkg := range jsonServer.Packages {
+			if pkg.RegistryName != "" && pkg.RegistryName != "unknown" {
+				tags = append(tags, pkg.RegistryName)
+			}
+		}
+
+		// Add some basic tags
+		tags = append(tags, "mcp", "server")
+
+		// Create Server with current model structure
+		server := models.Server{
+			ID:          jsonServer.ID,
+			Name:        jsonServer.Name,
+			Description: jsonServer.Description,
+			Version:     jsonServer.VersionDetail.Version,
+			Repository:  jsonServer.Repository.URL,
+			Author:      extractAuthorFromRepoURL(jsonServer.Repository.URL),
+			Tags:        tags,
+			IsActive:    true, // Default to active
+			CreatedAt:   time.Now().Format(time.RFC3339),
+		}
+
+		// Create the server
+		if err := m.Create(server); err != nil {
+			fmt.Printf("⚠️  Failed to create server %s: %v\n", server.Name, err)
+		} else {
+			successCount++
+		}
+	}
+
+	fmt.Printf("✅ Loaded %d servers from %s\n", successCount, filePath)
+	return nil
+}
+
+// extractAuthorFromRepoURL extracts author/organization from GitHub URL
+func extractAuthorFromRepoURL(repoURL string) string {
+	// Extract author from GitHub URL like "https://github.com/author/repo"
+	if strings.Contains(repoURL, "github.com/") {
+		parts := strings.Split(repoURL, "/")
+		if len(parts) >= 4 {
+			return parts[3] // Get the author/org part
+		}
+	}
+	return "Unknown"
+}
+
+// loadFallbackSampleData provides fallback sample data if JSON loading fails
+func (m *MemoryStore) loadFallbackSampleData() error {
 	sampleServers := []models.Server{
 		{
 			ID:          "1",
