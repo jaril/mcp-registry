@@ -186,6 +186,7 @@ my-mcp-registry/
 - [x] **Integration Testing**: End-to-end API testing
 - [x] **Test Utilities**: Mock implementations and test helpers
 - [x] **Code Coverage**: Coverage reporting and quality metrics
+- [x] **Container Support**: Docker images and container orchestration
 
 ### 📋 Roadmap
 
@@ -193,7 +194,6 @@ my-mcp-registry/
 - [ ] **Rate Limiting**: Request throttling and abuse prevention
 - [ ] **Metrics & Monitoring**: Prometheus metrics and health monitoring
 - [ ] **API Documentation**: Auto-generated OpenAPI/Swagger documentation
-- [ ] **Container Support**: Docker images and container orchestration
 - [ ] **Multiple Storage Backends**: PostgreSQL, MySQL support
 - [ ] **Caching Layer**: Redis-based caching for improved performance
 - [ ] **Backup & Recovery**: Database backup and restoration tools
