@@ -65,13 +65,13 @@ func setupRoutes(handler *handlers.Handler, cfg *config.Config) http.Handler {
 	// Add middleware
 	var finalHandler http.Handler = mux
 
-	// // CORS middleware (if enabled)
-	// if cfg.EnableCORS {
-	// 	finalHandler = corsMiddleware(finalHandler)
-	// }
+	// CORS middleware (if enabled)
+	if cfg.EnableCORS {
+		finalHandler = corsMiddleware(finalHandler)
+	}
 
-	// // Logging middleware
-	// finalHandler = loggingMiddleware(finalHandler, cfg)
+	// Logging middleware
+	finalHandler = loggingMiddleware(finalHandler, cfg)
 
 	return finalHandler
 }
@@ -174,4 +174,59 @@ func debugConfigHandler(cfg *config.Config) http.HandlerFunc {
 			http.Error(w, "Failed to encode config", http.StatusInternalServerError)
 		}
 	}
+}
+
+// Middleware functions
+
+// loggingMiddleware logs HTTP requests
+func loggingMiddleware(next http.Handler, cfg *config.Config) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Create a response writer wrapper to capture status code
+		ww := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		// Call the next handler
+		next.ServeHTTP(ww, r)
+
+		// Log the request (structured logging)
+		duration := time.Since(start)
+
+		if cfg.LogLevel == "debug" {
+			log.Printf("HTTP %s %s %d %v %s",
+				r.Method, r.URL.Path, ww.statusCode, duration, r.RemoteAddr)
+		} else if ww.statusCode >= 400 {
+			// Always log errors
+			log.Printf("HTTP ERROR %s %s %d %v",
+				r.Method, r.URL.Path, ww.statusCode, duration)
+		}
+	})
+}
+
+// corsMiddleware adds CORS headers
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// responseWriter wraps http.ResponseWriter to capture status code
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
