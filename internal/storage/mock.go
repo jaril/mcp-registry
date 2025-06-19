@@ -58,6 +58,11 @@ func (m *MockStore) Close() error {
 	return args.Error(0)
 }
 
+// MatchedBy returns a mock argument matcher for flexible matching
+func (m *MockStore) MatchedBy(fn func(models.Server) bool) interface{} {
+	return mock.MatchedBy(fn)
+}
+
 // Helper methods for setting up mock expectations
 
 func (m *MockStore) ExpectGetAll(servers []models.Server, err error) *mock.Call {
@@ -68,7 +73,7 @@ func (m *MockStore) ExpectGetByID(id string, server *models.Server, err error) *
 	return m.On("GetByID", id).Return(server, err)
 }
 
-func (m *MockStore) ExpectCreate(server models.Server, err error) *mock.Call {
+func (m *MockStore) ExpectCreate(server interface{}, err error) *mock.Call {
 	return m.On("Create", server).Return(err)
 }
 
