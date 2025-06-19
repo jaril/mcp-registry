@@ -3,44 +3,43 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
-	"registry/internal/handlers"
+	"registry/internal/config"
+	"registry/internal/models"
+	"registry/internal/server"
 	"registry/internal/storage"
 )
 
 func main() {
-	fmt.Println("🚀 MCP Registry server starting...")
-
-	// Initialize storage
-	store := storage.NewMemoryStore()
-
-	// Add sample data
-	if err := store.InitWithSampleData(); err != nil {
-		log.Fatalf("Failed to initialize sample data: %v", err)
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Initialize handlers
-	handler := handlers.NewHandler(store)
+	// Log configuration (excluding sensitive data)
+	cfg.LogConfig()
 
-	// Register routes
-	http.HandleFunc("/health", handler.HealthHandler)
-	http.HandleFunc("/servers", handler.ServersHandler)
-	http.HandleFunc("/servers/", handler.ServerDetailHandler)
-	http.HandleFunc("/servers/count", handler.CountHandler)
-	http.HandleFunc("/servers/search", handler.SearchHandler)
+	// Initialize storage based on configuration
+	var store models.ServerStore
+	switch cfg.StorageType {
+	case "memory":
+		memStore := storage.NewMemoryStore()
+		if err := memStore.InitWithSampleData(); err != nil {
+			log.Fatalf("Failed to initialize sample data: %v", err)
+		}
+		store = memStore
+	default:
+		log.Fatalf("Unknown storage type: %s", cfg.StorageType)
+	}
 
-	// Start server
-	port := ":8080"
-	fmt.Printf("📡 Server running on http://localhost%s\n", port)
-	fmt.Println("📋 Available endpoints:")
-	fmt.Println("   GET  /health")
-	fmt.Println("   GET  /servers")
-	fmt.Println("   POST /servers")
-	fmt.Println("   GET  /servers/{id}")
-	fmt.Println("   GET  /servers/count")
-	fmt.Println("   GET  /servers/search?name=xyz")
+	// Create and start server
+	srv := server.New(cfg, store)
 
-	log.Fatal(http.ListenAndServe(port, nil))
+	// Start server (blocks until shutdown)
+	if err := srv.Start(); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
+
+	log.Println("👋 Goodbye!")
 }
