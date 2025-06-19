@@ -34,7 +34,7 @@ func main() {
 		store = memStore
 		cleanup = func() error { return nil } // No cleanup needed for memory
 
-	case "sqlite", "database":
+	case "sqlite", "database": // Both "sqlite" and "database" use SQLite
 		log.Printf("🗄️  Using SQLite database: %s", cfg.DatabaseURL)
 
 		connLifetime := time.Duration(cfg.ConnMaxLifetime) * time.Minute

@@ -293,7 +293,7 @@ func (s *SQLiteStore) Count() (total int, active int, err error) {
 	query := `
 		SELECT 
 			COUNT(*) as total,
-			SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active
+			COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active
 		FROM servers
 	`
 

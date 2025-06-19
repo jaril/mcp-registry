@@ -174,13 +174,13 @@ my-mcp-registry/
 - [x] **In-Memory Storage**: Thread-safe storage with mutex synchronization
 - [x] **Validation System**: Input validation with detailed error reporting
 - [x] **Development Tools**: Debug endpoints and development-specific features
+- [x] **Database Integration**: SQLite storage with schema migrations
+- [x] **Connection Pooling**: Database connection management and optimization
+- [x] **Data Persistence**: Durable storage with transaction support
+- [x] **SQL Query Layer**: Prepared statements and query optimization
 
 ### 📋 Roadmap
 
-- [ ] **Database Integration**: SQLite storage with schema migrations
-- [ ] **Connection Pooling**: Database connection management and optimization
-- [ ] **Data Persistence**: Durable storage with transaction support
-- [ ] **SQL Query Layer**: Prepared statements and query optimization
 - [ ] **Unit Testing**: Comprehensive test suite for all packages
 - [ ] **Integration Testing**: End-to-end API testing
 - [ ] **Test Utilities**: Mock implementations and test helpers

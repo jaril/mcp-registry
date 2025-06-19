@@ -47,7 +47,7 @@ func Load() (*Config, error) {
 		host           = flag.String("host", "", "Server host (default: localhost)")
 		environment    = flag.String("env", "", "Environment: dev, staging, production (default: dev)")
 		logLevel       = flag.String("log-level", "", "Log level: debug, info, warn, error (default: info)")
-		storageType    = flag.String("storage", "", "Storage type: memory, file (default: memory)")
+		storageType    = flag.String("storage", "", "Storage type: memory, sqlite, database (default: memory)")
 		version        = flag.Bool("version", false, "Show version and exit")
 		help           = flag.Bool("help", false, "Show help and exit")
 		databaseURL    = flag.String("db-url", "", "Database URL (default: ./data/registry.db)")
@@ -66,7 +66,7 @@ func Load() (*Config, error) {
 		fmt.Println("  MCP_HOST          Server host")
 		fmt.Println("  MCP_ENVIRONMENT   Environment (dev/staging/production)")
 		fmt.Println("  MCP_LOG_LEVEL     Log level (debug/info/warn/error)")
-		fmt.Println("  MCP_STORAGE_TYPE  Storage type (memory/file)")
+		fmt.Println("  MCP_STORAGE_TYPE  Storage type (memory/sqlite/database)")
 		os.Exit(0)
 	}
 
@@ -81,7 +81,7 @@ func Load() (*Config, error) {
 	cfg.Host = getConfigValue(*host, "MCP_HOST", "localhost")
 	cfg.Environment = getConfigValue(*environment, "MCP_ENVIRONMENT", "dev")
 	cfg.LogLevel = getConfigValue(*logLevel, "MCP_LOG_LEVEL", "info")
-	cfg.StorageType = getConfigValue(*storageType, "MCP_STORAGE_TYPE", "memory")
+	cfg.StorageType = getConfigValue(*storageType, "MCP_STORAGE_TYPE", "sqlite")
 	cfg.Version = getEnvOr("MCP_VERSION", "dev")
 	cfg.DataPath = getEnvOr("MCP_DATA_PATH", "./data")
 	cfg.DatabaseURL = getConfigValue(*databaseURL, "MCP_DATABASE_URL", "./data/registry.db")
@@ -126,7 +126,7 @@ func (c *Config) Validate() error {
 
 	// Validate storage type
 	switch c.StorageType {
-	case "memory", "file":
+	case "memory", "file", "sqlite", "database":
 		// Valid storage types (database will be added later)
 	default:
 		return fmt.Errorf("invalid storage type: %s (must be memory/file)", c.StorageType)
