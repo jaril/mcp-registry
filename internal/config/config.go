@@ -27,6 +27,14 @@ type Config struct {
 	// Feature flags
 	EnableMetrics bool `json:"enable_metrics"`
 	EnableCORS    bool `json:"enable_cors"`
+
+	// Database configuration
+	DatabaseURL     string `json:"database_url"`      // Connection string
+	DatabaseDriver  string `json:"database_driver"`   // sqlite3, postgres, mysql
+	DatabaseName    string `json:"database_name"`     // Database name
+	MaxOpenConns    int    `json:"max_open_conns"`    // Connection pool size
+	MaxIdleConns    int    `json:"max_idle_conns"`    // Idle connections
+	ConnMaxLifetime int    `json:"conn_max_lifetime"` // Connection lifetime (minutes
 }
 
 // Load reads configuration from environment variables, command line flags, and defaults
@@ -35,13 +43,15 @@ func Load() (*Config, error) {
 
 	// Define command line flags
 	var (
-		port        = flag.String("port", "", "Server port (default: 8080)")
-		host        = flag.String("host", "", "Server host (default: localhost)")
-		environment = flag.String("env", "", "Environment: dev, staging, production (default: dev)")
-		logLevel    = flag.String("log-level", "", "Log level: debug, info, warn, error (default: info)")
-		storageType = flag.String("storage", "", "Storage type: memory, file (default: memory)")
-		version     = flag.Bool("version", false, "Show version and exit")
-		help        = flag.Bool("help", false, "Show help and exit")
+		port           = flag.String("port", "", "Server port (default: 8080)")
+		host           = flag.String("host", "", "Server host (default: localhost)")
+		environment    = flag.String("env", "", "Environment: dev, staging, production (default: dev)")
+		logLevel       = flag.String("log-level", "", "Log level: debug, info, warn, error (default: info)")
+		storageType    = flag.String("storage", "", "Storage type: memory, file (default: memory)")
+		version        = flag.Bool("version", false, "Show version and exit")
+		help           = flag.Bool("help", false, "Show help and exit")
+		databaseURL    = flag.String("db-url", "", "Database URL (default: ./data/registry.db)")
+		databaseDriver = flag.String("db-driver", "", "Database driver: sqlite3, postgres (default: sqlite3)")
 	)
 
 	flag.Parse()
@@ -74,6 +84,12 @@ func Load() (*Config, error) {
 	cfg.StorageType = getConfigValue(*storageType, "MCP_STORAGE_TYPE", "memory")
 	cfg.Version = getEnvOr("MCP_VERSION", "dev")
 	cfg.DataPath = getEnvOr("MCP_DATA_PATH", "./data")
+	cfg.DatabaseURL = getConfigValue(*databaseURL, "MCP_DATABASE_URL", "./data/registry.db")
+	cfg.DatabaseDriver = getConfigValue(*databaseDriver, "MCP_DATABASE_DRIVER", "sqlite3")
+	cfg.DatabaseName = getEnvOr("MCP_DATABASE_NAME", "mcp_registry")
+	cfg.MaxOpenConns = getEnvInt("MCP_MAX_OPEN_CONNS", 25)
+	cfg.MaxIdleConns = getEnvInt("MCP_MAX_IDLE_CONNS", 25)
+	cfg.ConnMaxLifetime = getEnvInt("MCP_CONN_MAX_LIFETIME", 5)
 
 	// Feature flags
 	cfg.EnableMetrics = getEnvBool("MCP_ENABLE_METRICS", false)
@@ -119,6 +135,23 @@ func (c *Config) Validate() error {
 	// Validate port is numeric
 	if _, err := strconv.Atoi(c.Port); err != nil {
 		return fmt.Errorf("invalid port: %s (must be numeric)", c.Port)
+	}
+
+	// Validate database driver
+	switch c.DatabaseDriver {
+	case "sqlite3", "postgres", "mysql":
+		// Valid drivers
+	default:
+		return fmt.Errorf("invalid database driver: %s (must be sqlite3/postgres/mysql)", c.DatabaseDriver)
+	}
+
+	// Validate connection pool settings
+	if c.MaxOpenConns <= 0 {
+		return fmt.Errorf("max_open_conns must be positive, got: %d", c.MaxOpenConns)
+	}
+
+	if c.MaxIdleConns <= 0 {
+		return fmt.Errorf("max_idle_conns must be positive, got: %d", c.MaxIdleConns)
 	}
 
 	return nil
@@ -172,6 +205,16 @@ func getEnvBool(key string, defaultValue bool) bool {
 			return true
 		case "false", "0", "no", "off":
 			return false
+		}
+	}
+	return defaultValue
+}
+
+// Add helper function for integer environment variables:
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
 		}
 	}
 	return defaultValue
