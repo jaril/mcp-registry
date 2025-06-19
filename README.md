@@ -133,6 +133,10 @@ curl -X POST -H "Content-Type: application/json" \
 curl http://localhost:8080/servers/count
 ```
 
+## Testing
+
+For detailed testing instructions, please refer to [TESTING.md](TESTING.md).
+
 ## 🏗️ Architecture
 
 ### Project Structure
