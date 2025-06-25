@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"registry/internal/api/router"
 	"time"
 )
 
@@ -21,7 +22,7 @@ const SERVER_ADDRESS = ":8080"
 // NewServer creates a new HTTP server
 // func NewServer(cfg *config.Config, registryService service.RegistryService, authService auth.Service) *Server {
 func NewServer() *Server {
-	mux := http.NewServeMux()
+	mux := router.New()
 
 	server := &Server{
 		// config:      cfg,
