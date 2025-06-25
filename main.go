@@ -12,6 +12,8 @@ import (
 
 	"registry/internal/api"
 	"registry/internal/config"
+	"registry/internal/database"
+	"registry/internal/model"
 )
 
 func main() {
@@ -37,6 +39,7 @@ func main() {
 
 	// Initialize configuration
 	cfg := config.NewConfig()
+	db := database.NewMemoryDB(map[string]*model.Server{})
 
 	// // Initialize services based on environment
 	// switch cfg.DatabaseType {
