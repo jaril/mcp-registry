@@ -79,18 +79,18 @@ func main() {
 	// 	return
 	// }
 
-	// // Import seed data if requested (works for both memory and MongoDB)
-	// if cfg.SeedImport {
-	// 	log.Println("Importing data...")
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	// 	defer cancel()
+	// Import seed data if requested (works for both memory and MongoDB)
+	if cfg.SeedImport {
+		log.Println("Importing data...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
 
-	// 	if err := db.ImportSeed(ctx, cfg.SeedFilePath); err != nil {
-	// 		log.Printf("Failed to import seed file: %v", err)
-	// 	} else {
-	// 		log.Println("Data import completed successfully")
-	// 	}
-	// }
+		if err := db.ImportSeed(ctx, cfg.SeedFilePath); err != nil {
+			log.Printf("Failed to import seed file: %v", err)
+		} else {
+			log.Println("Data import completed successfully")
+		}
+	}
 
 	// // Initialize authentication services
 	// authService := auth.NewAuthService(cfg)
