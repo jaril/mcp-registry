@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -17,20 +18,32 @@ import (
 	"registry/internal/service"
 )
 
+// Version info for the MCP Registry application
+var (
+	// Version is the current version of the MCP Registry application
+	Version = "0.1.0"
+
+	// BuildTime is the time at which the binary was built
+	BuildTime = "undefined"
+
+	// GitCommit is the git commit that was compiled
+	GitCommit = "undefined"
+)
+
 func main() {
-	// // Parse command line flags
-	// showVersion := flag.Bool("version", false, "Display version information")
-	// flag.Parse()
+	// Parse command line flags
+	showVersion := flag.Bool("version", false, "Display version information")
+	flag.Parse()
 
-	// // Show version information if requested
-	// if *showVersion {
-	// 	log.Printf("MCP Registry v%s\n", Version)
-	// 	log.Printf("Git commit: %s\n", GitCommit)
-	// 	log.Printf("Build time: %s\n", BuildTime)
-	// 	return
-	// }
+	// Show version information if requested
+	if *showVersion {
+		log.Printf("MCP Registry v%s\n", Version)
+		log.Printf("Git commit: %s\n", GitCommit)
+		log.Printf("Build time: %s\n", BuildTime)
+		return
+	}
 
-	// log.Printf("Starting MCP Registry Application v%s (commit: %s)", Version, GitCommit)
+	log.Printf("Starting MCP Registry Application v%s (commit: %s)", Version, GitCommit)
 
 	// var (
 	// 	registryService service.RegistryService
