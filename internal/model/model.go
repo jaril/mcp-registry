@@ -83,45 +83,45 @@ type Server struct {
 // 	AuthStatusToken string `json:"-"` // Used internally for device flows
 // }
 
-// // ServerDetail represents detailed server information as defined in the spec
-// type ServerDetail struct {
-// 	Server   `json:",inline" bson:",inline"`
-// 	Packages []Package `json:"packages,omitempty" bson:"packages,omitempty"`
-// 	Remotes  []Remote  `json:"remotes,omitempty" bson:"remotes,omitempty"`
-// }
+// ServerDetail represents detailed server information as defined in the spec
+type ServerDetail struct {
+	Server   `json:",inline" bson:",inline"`
+	Packages []Package `json:"packages,omitempty" bson:"packages,omitempty"`
+	Remotes  []Remote  `json:"remotes,omitempty" bson:"remotes,omitempty"`
+}
 
-// // Remote represents a remote connection endpoint
-// type Remote struct {
-// 	TransportType string  `json:"transport_type" bson:"transport_type"`
-// 	URL           string  `json:"url" bson:"url"`
-// 	Headers       []Input `json:"headers,omitempty" bson:"headers,omitempty"`
-// }
+// Remote represents a remote connection endpoint
+type Remote struct {
+	TransportType string  `json:"transport_type" bson:"transport_type"`
+	URL           string  `json:"url" bson:"url"`
+	Headers       []Input `json:"headers,omitempty" bson:"headers,omitempty"`
+}
 
-// type Package struct {
-// 	RegistryName         string          `json:"registry_name" bson:"registry_name"`
-// 	Name                 string          `json:"name" bson:"name"`
-// 	Version              string          `json:"version" bson:"version"`
-// 	RunTimeHint          string          `json:"runtime_hint,omitempty" bson:"runtime_hint,omitempty"`
-// 	RuntimeArguments     []Argument      `json:"runtime_arguments,omitempty" bson:"runtime_arguments,omitempty"`
-// 	PackageArguments     []Argument      `json:"package_arguments,omitempty" bson:"package_arguments,omitempty"`
-// 	EnvironmentVariables []KeyValueInput `json:"environment_variables,omitempty" bson:"environment_variables,omitempty"`
-// }
+type Package struct {
+	RegistryName         string          `json:"registry_name" bson:"registry_name"`
+	Name                 string          `json:"name" bson:"name"`
+	Version              string          `json:"version" bson:"version"`
+	RunTimeHint          string          `json:"runtime_hint,omitempty" bson:"runtime_hint,omitempty"`
+	RuntimeArguments     []Argument      `json:"runtime_arguments,omitempty" bson:"runtime_arguments,omitempty"`
+	PackageArguments     []Argument      `json:"package_arguments,omitempty" bson:"package_arguments,omitempty"`
+	EnvironmentVariables []KeyValueInput `json:"environment_variables,omitempty" bson:"environment_variables,omitempty"`
+}
 
-// // RuntimeArgument defines a type that can be either a PositionalArgument or a NamedArgument
-// type Argument struct {
-// 	InputWithVariables `json:",inline" bson:",inline"`
-// 	Type               ArgumentType `json:"type" bson:"type"`
-// 	Name               string       `json:"name,omitempty" bson:"name,omitempty"`
-// 	IsRepeated         bool         `json:"is_repeated,omitempty" bson:"is_repeated,omitempty"`
-// 	ValueHint          string       `json:"value_hint,omitempty" bson:"value_hint,omitempty"`
-// }
+// RuntimeArgument defines a type that can be either a PositionalArgument or a NamedArgument
+type Argument struct {
+	InputWithVariables `json:",inline" bson:",inline"`
+	Type               ArgumentType `json:"type" bson:"type"`
+	Name               string       `json:"name,omitempty" bson:"name,omitempty"`
+	IsRepeated         bool         `json:"is_repeated,omitempty" bson:"is_repeated,omitempty"`
+	ValueHint          string       `json:"value_hint,omitempty" bson:"value_hint,omitempty"`
+}
 
-// type KeyValueInput struct {
-// 	InputWithVariables `json:",inline" bson:",inline"`
-// 	Name               string `json:"name" bson:"name"`
-// }
+type KeyValueInput struct {
+	InputWithVariables `json:",inline" bson:",inline"`
+	Name               string `json:"name" bson:"name"`
+}
 
-// type InputWithVariables struct {
-// 	Input     `json:",inline" bson:",inline"`
-// 	Variables map[string]Input `json:"variables,omitempty" bson:"variables,omitempty"`
-// }
+type InputWithVariables struct {
+	Input     `json:",inline" bson:",inline"`
+	Variables map[string]Input `json:"variables,omitempty" bson:"variables,omitempty"`
+}
