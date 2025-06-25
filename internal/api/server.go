@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"registry/internal/api/router"
 	"registry/internal/config"
+	"registry/internal/service"
 	"time"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	config *config.Config
-	// registry service.RegistryService
+	config   *config.Config
+	registry service.RegistryService
 	// authService auth.Service
 	router *http.ServeMux
 	server *http.Server
@@ -20,12 +21,12 @@ type Server struct {
 
 // NewServer creates a new HTTP server
 // func NewServer(cfg *config.Config, registryService service.RegistryService, authService auth.Service) *Server {
-func NewServer(cfg *config.Config) *Server {
-	mux := router.New(cfg)
+func NewServer(cfg *config.Config, registryService service.RegistryService) *Server {
+	mux := router.New(cfg, registryService)
 
 	server := &Server{
-		config: cfg,
-		// registry:    registryService,
+		config:   cfg,
+		registry: registryService,
 		// authService: authService,
 		router: mux,
 		server: &http.Server{

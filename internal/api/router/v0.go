@@ -4,12 +4,13 @@ import (
 	"net/http"
 	v0 "registry/internal/api/handlers/v0"
 	"registry/internal/config"
+	"registry/internal/service"
 )
 
-func RegisterV0Routes(mux *http.ServeMux, cfg *config.Config) {
+func RegisterV0Routes(mux *http.ServeMux, cfg *config.Config, registry service.RegistryService) {
 	// Register v0 endpoints
 	mux.HandleFunc("/v0/health", v0.HealthHandler(cfg))
-	// mux.HandleFunc("/v0/servers", v0.ServersHandler(registry))
+	mux.HandleFunc("/v0/servers", v0.ServersHandler(registry))
 	// mux.HandleFunc("/v0/servers/{id}", v0.ServersDetailHandler(registry))
 	mux.HandleFunc("/v0/ping", v0.PingHandler(cfg))
 	// mux.HandleFunc("/v0/publish", v0.PublishHandler(registry, authService))

@@ -1,0 +1,98 @@
+// Package v0 contains API handlers for version 0 of the API
+package v0
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"registry/internal/model"
+	"registry/internal/service"
+
+	"github.com/google/uuid"
+)
+
+// Response is a paginated API response
+type PaginatedResponse struct {
+	Data     []model.Server `json:"servers"`
+	Metadata Metadata       `json:"metadata,omitempty"`
+}
+
+// Metadata contains pagination metadata
+type Metadata struct {
+	NextCursor string `json:"next_cursor,omitempty"`
+	Count      int    `json:"count,omitempty"`
+	Total      int    `json:"total,omitempty"`
+}
+
+// ServersHandler returns a handler for listing registry items
+func ServersHandler(registry service.RegistryService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Parse cursor and limit from query parameters
+		cursor := r.URL.Query().Get("cursor")
+		if cursor != "" {
+			_, err := uuid.Parse(cursor)
+			if err != nil {
+				http.Error(w, "Invalid cursor parameter", http.StatusBadRequest)
+				return
+			}
+		}
+		limitStr := r.URL.Query().Get("limit")
+
+		// Default limit if not specified
+		limit := 30
+
+		// Try to parse limit from query param
+		if limitStr != "" {
+			parsedLimit, err := strconv.Atoi(limitStr)
+			if err != nil {
+				http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
+				return
+			}
+
+			// Check if limit is within reasonable bounds
+			if parsedLimit <= 0 {
+				http.Error(w, "Limit must be greater than 0", http.StatusBadRequest)
+				return
+			}
+
+			if parsedLimit > 100 {
+				// Cap maximum limit to prevent excessive queries
+				limit = 100
+			} else {
+				limit = parsedLimit
+			}
+		}
+
+		// Use the GetAll method to get paginated results
+		registries, nextCursor, err := registry.List(cursor, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Create paginated response
+		response := PaginatedResponse{
+			Data: registries,
+		}
+
+		// Add metadata if there's a next cursor
+		if nextCursor != "" {
+			response.Metadata = Metadata{
+				NextCursor: nextCursor,
+				Count:      len(registries),
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
+	}
+}
