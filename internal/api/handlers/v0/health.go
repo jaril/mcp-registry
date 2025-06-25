@@ -4,6 +4,7 @@ package v0
 import (
 	"encoding/json"
 	"net/http"
+	"registry/internal/config"
 )
 
 type HealthResponse struct {
@@ -12,12 +13,12 @@ type HealthResponse struct {
 }
 
 // HealthHandler returns a handler for health check endpoint
-func HealthHandler() http.HandlerFunc {
+func HealthHandler(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(HealthResponse{
-			Status: "ok",
-			// GitHubClientID: cfg.GithubClientID,
+			Status:         "ok",
+			GitHubClientID: cfg.GithubClientID,
 		}); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		}

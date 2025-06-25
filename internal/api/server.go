@@ -5,33 +5,31 @@ import (
 	"log"
 	"net/http"
 	"registry/internal/api/router"
+	"registry/internal/config"
 	"time"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	// config      *config.Config
+	config *config.Config
 	// registry service.RegistryService
 	// authService auth.Service
-	// router *http.ServeMux
+	router *http.ServeMux
 	server *http.Server
 }
 
-const SERVER_ADDRESS = ":8080"
-
 // NewServer creates a new HTTP server
 // func NewServer(cfg *config.Config, registryService service.RegistryService, authService auth.Service) *Server {
-func NewServer() *Server {
-	mux := router.New()
+func NewServer(cfg *config.Config) *Server {
+	mux := router.New(cfg)
 
 	server := &Server{
-		// config:      cfg,
+		config: cfg,
 		// registry:    registryService,
 		// authService: authService,
-		// router:      mux,
+		router: mux,
 		server: &http.Server{
-			// Addr:              cfg.ServerAddress,
-			Addr:              SERVER_ADDRESS,
+			Addr:              cfg.ServerAddress,
 			Handler:           mux,
 			ReadHeaderTimeout: 10 * time.Second,
 		},
@@ -42,8 +40,7 @@ func NewServer() *Server {
 
 // Start begins listening for incoming HTTP requests
 func (s *Server) Start() error {
-	// log.Printf("HTTP server starting on %s", s.config.ServerAddress)
-	log.Printf("HTTP server starting on %s", SERVER_ADDRESS)
+	log.Printf("HTTP server starting on %s", s.config.ServerAddress)
 	return s.server.ListenAndServe()
 }
 

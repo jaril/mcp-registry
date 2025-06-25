@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"registry/internal/api"
+	"registry/internal/config"
 )
 
 func main() {
@@ -34,8 +35,8 @@ func main() {
 	// 	err             error
 	// )
 
-	// // Initialize configuration
-	// cfg := config.NewConfig()
+	// Initialize configuration
+	cfg := config.NewConfig()
 
 	// // Initialize services based on environment
 	// switch cfg.DatabaseType {
@@ -90,7 +91,7 @@ func main() {
 	// authService := auth.NewAuthService(cfg)
 
 	// Initialize HTTP server
-	server := api.NewServer()
+	server := api.NewServer(cfg)
 
 	// Start server in a goroutine so it doesn't block signal handling
 	go func() {
