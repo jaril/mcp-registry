@@ -11,7 +11,7 @@ func RegisterV0Routes(mux *http.ServeMux, cfg *config.Config) {
 	mux.HandleFunc("/v0/health", v0.HealthHandler(cfg))
 	// mux.HandleFunc("/v0/servers", v0.ServersHandler(registry))
 	// mux.HandleFunc("/v0/servers/{id}", v0.ServersDetailHandler(registry))
-	// mux.HandleFunc("/v0/ping", v0.PingHandler(cfg))
+	mux.HandleFunc("/v0/ping", v0.PingHandler(cfg))
 	// mux.HandleFunc("/v0/publish", v0.PublishHandler(registry, authService))
 
 	// // Register Swagger UI routes
