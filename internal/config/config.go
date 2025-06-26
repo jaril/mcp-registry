@@ -14,7 +14,7 @@ const (
 // Config holds the application configuration
 type Config struct {
 	ServerAddress      string       `env:"SERVER_ADDRESS" envDefault:":8080"`
-	DatabaseType       DatabaseType `env:"DATABASE_TYPE" envDefault:"mongodb"`
+	DatabaseType       DatabaseType `env:"DATABASE_TYPE" envDefault:"memory"`
 	DatabaseURL        string       `env:"DATABASE_URL" envDefault:"mongodb://localhost:27017"`
 	DatabaseName       string       `env:"DATABASE_NAME" envDefault:"mcp-registry"`
 	CollectionName     string       `env:"COLLECTION_NAME" envDefault:"servers_v2"`
