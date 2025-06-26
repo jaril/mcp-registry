@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"registry/internal/api/router"
+	"registry/internal/auth"
 	"registry/internal/config"
 	"registry/internal/service"
 	"time"
@@ -21,8 +22,8 @@ type Server struct {
 
 // NewServer creates a new HTTP server
 // func NewServer(cfg *config.Config, registryService service.RegistryService, authService auth.Service) *Server {
-func NewServer(cfg *config.Config, registryService service.RegistryService) *Server {
-	mux := router.New(cfg, registryService)
+func NewServer(cfg *config.Config, registryService service.RegistryService, authService auth.Service) *Server {
+	mux := router.New(cfg, registryService, authService)
 
 	server := &Server{
 		config:   cfg,

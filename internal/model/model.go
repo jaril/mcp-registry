@@ -77,11 +77,11 @@ type Server struct {
 	VersionDetail VersionDetail `json:"version_detail" bson:"version_detail"`
 }
 
-// // PublishRequest represents a request to publish a server to the registry
-// type PublishRequest struct {
-// 	ServerDetail    `json:",inline"`
-// 	AuthStatusToken string `json:"-"` // Used internally for device flows
-// }
+// PublishRequest represents a request to publish a server to the registry
+type PublishRequest struct {
+	ServerDetail    `json:",inline"`
+	AuthStatusToken string `json:"-"` // Used internally for device flows
+}
 
 // ServerDetail represents detailed server information as defined in the spec
 type ServerDetail struct {

@@ -108,7 +108,7 @@ func main() {
 	authService := auth.NewAuthService(cfg)
 
 	// Initialize HTTP server
-	server := api.NewServer(cfg, registryService)
+	server := api.NewServer(cfg, registryService, authService)
 
 	// Start server in a goroutine so it doesn't block signal handling
 	go func() {
