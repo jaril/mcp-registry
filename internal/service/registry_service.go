@@ -46,3 +46,18 @@ func (s *registryServiceImpl) List(cursor string, limit int) ([]model.Server, st
 
 	return result, nextCursor, nil
 }
+
+// GetByID retrieves a specific server detail by its ID
+func (s *registryServiceImpl) GetByID(id string) (*model.ServerDetail, error) {
+	// Create a timeout context for the database operation
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Use the database's GetByID method to retrieve the server detail
+	serverDetail, err := s.db.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return serverDetail, nil
+}

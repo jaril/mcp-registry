@@ -96,3 +96,40 @@ func ServersHandler(registry service.RegistryService) http.HandlerFunc {
 		}
 	}
 }
+
+// ServersDetailHandler returns a handler for getting details of a specific server by ID
+func ServersDetailHandler(registry service.RegistryService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract the server ID from the URL path
+		id := r.PathValue("id")
+
+		// Validate that the ID is a valid UUID
+		_, err := uuid.Parse(id)
+		if err != nil {
+			http.Error(w, "Invalid server ID format", http.StatusBadRequest)
+			return
+		}
+
+		// Get the server details from the registry service
+		serverDetail, err := registry.GetByID(id)
+		if err != nil {
+			if err.Error() == "record not found" {
+				http.Error(w, "Server not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Error retrieving server details", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(serverDetail); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
+	}
+}
