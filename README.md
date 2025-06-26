@@ -18,7 +18,7 @@ go run main.go
 - [x] GET /v0/servers
 - [x] GET /v0/servers/{id}
 - [x] GET /v0/ping
-- [ ] POST /v0/publish
+- [x] POST /v0/publish
 
 ## Configuration
 
