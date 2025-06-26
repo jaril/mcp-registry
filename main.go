@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"registry/internal/api"
+	"registry/internal/auth"
 	"registry/internal/config"
 	"registry/internal/database"
 	"registry/internal/model"
@@ -103,8 +104,8 @@ func main() {
 		}
 	}
 
-	// // Initialize authentication services
-	// authService := auth.NewAuthService(cfg)
+	// Initialize authentication services
+	authService := auth.NewAuthService(cfg)
 
 	// Initialize HTTP server
 	server := api.NewServer(cfg, registryService)
