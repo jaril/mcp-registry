@@ -4,6 +4,18 @@ This project is a learning-focused clone of the original Model Context Protocol 
 
 ## Quickstart
 
+### With Docker
+
+```bash
+# Build the Docker image
+docker build -t registry .
+
+# Run the registry and MongoDB with docker compose
+docker compose up
+```
+
+### Locally
+
 ```bash
 # Run MongoDB with Docker on port 27017
 docker run -d --name mongodb -p 27017:27017 mongo:latest
